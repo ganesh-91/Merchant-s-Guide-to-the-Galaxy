@@ -10,38 +10,38 @@ const creditRegex = /Credits/i,
 
 const currency = [{
 		romanVal: "I",
-		actualVal: 1,
-		galaxyCurrencyVal: ""
+		value: 1,
+		name: ""
 	},
 	{
 		romanVal: "V",
-		actualVal: 5,
-		galaxyCurrencyVal: ""
+		value: 5,
+		name: ""
 	},
 	{
 		romanVal: "X",
-		actualVal: 10,
-		galaxyCurrencyVal: ""
+		value: 10,
+		name: ""
 	},
 	{
 		romanVal: "L",
-		actualVal: 50,
-		galaxyCurrencyVal: ""
+		value: 50,
+		name: ""
 	},
 	{
 		romanVal: "C",
-		actualVal: 100,
-		galaxyCurrencyVal: ""
+		value: 100,
+		name: ""
 	},
 	{
 		romanVal: "D",
-		actualVal: 5000,
-		galaxyCurrencyVal: ""
+		value: 5000,
+		name: ""
 	},
 	{
 		romanVal: "M",
-		actualVal: 10000,
-		galaxyCurrencyVal: ""
+		value: 10000,
+		name: ""
 	}
 ];
 
@@ -74,8 +74,8 @@ const guidetotheGalaxyProblem = function guidetotheGalaxyProblem(textByLine, cur
 	// console.log(" ");
 
 	keysAndValueArray = _concatcurrencyAndElement(elementValueArray, currencyArray);
-	console.log("keysAndValueArray = ", keysAndValueArray);
-	console.log(" ");
+	// console.log("keysAndValueArray = ", keysAndValueArray);
+	// console.log(" ");
 
 	solvedQuestionValues = _evalValuesInQuestionStatements(questionSatement, currencyArray, elementValueArray);
 
@@ -95,11 +95,11 @@ const guidetotheGalaxyProblem = function guidetotheGalaxyProblem(textByLine, cur
 					// if the statement is have the roman number push the keyword in object
 					if (subStr.test(inputText[i])) {
 						breakedStatement = inputText[i].split(' ');
-						curr[j].galaxyCurrencyVal = breakedStatement[0];
+						curr[j].name = breakedStatement[0];
 						arrgCurrency.push(curr[j]);
 						// console.log(j);
 						// console.log(arrgCurrency);
-						// arrgCurrency[j].galaxyCurrencyVal = breakedStatement[0];
+						// arrgCurrency[j].name = breakedStatement[0];
 					}
 				}
 			}
@@ -118,11 +118,11 @@ const guidetotheGalaxyProblem = function guidetotheGalaxyProblem(textByLine, cur
 			if ((!(questionRegex.test(inputText[i]))) && (creditRegex.test(inputText[i]))) {
 
 				for (var j = 0; j < currencyArrLen; j++) {
-					if (arrgCurrency[j].galaxyCurrencyVal !== "") {
-						subStr = new RegExp(arrgCurrency[j].galaxyCurrencyVal, 'i');
+					if (arrgCurrency[j].name !== "") {
+						subStr = new RegExp(arrgCurrency[j].name, 'i');
 						if (subStr.test(inputText[i])) {
-							var regexStr = new RegExp(arrgCurrency[j].galaxyCurrencyVal, 'g');
-							inputText[i] = inputText[i].replace(regexStr, arrgCurrency[j].actualVal);
+							var regexStr = new RegExp(arrgCurrency[j].name, 'g');
+							inputText[i] = inputText[i].replace(regexStr, arrgCurrency[j].value);
 						}
 					}
 				}
@@ -188,8 +188,8 @@ const guidetotheGalaxyProblem = function guidetotheGalaxyProblem(textByLine, cur
 			length = currencyArray.length;
 		for (var i = 0; i < length; i++) {
 			keyObj.push({
-				name: currencyArray[i].galaxyCurrencyVal,
-				value: currencyArray[i].actualVal
+				name: currencyArray[i].name,
+				value: currencyArray[i].value
 			})
 		}
 		keyObj = keyObj.concat(elementValueArray)
@@ -198,9 +198,9 @@ const guidetotheGalaxyProblem = function guidetotheGalaxyProblem(textByLine, cur
 
 	function _evalValuesInQuestionStatements(questionSatement, currencyArray, elementValueArray) {
 		var queObjLen = questionSatement.length,
-			value = 0,
 			item = [],
 			creditQuestions = [],
+			solutionArray = [],
 			nonCreditQuestions = [];
 		for (var i = 0; i < queObjLen; i++) {
 			if (creditRegex.test(questionSatement[i])) {
@@ -209,32 +209,74 @@ const guidetotheGalaxyProblem = function guidetotheGalaxyProblem(textByLine, cur
 				nonCreditQuestions.push(questionSatement[i]);
 			}
 		}
-		console.log("creditQuestions=", creditQuestions);
-		console.log("nonCreditQuestions=", nonCreditQuestions);
-
+		// console.log("creditQuestions=", creditQuestions);
+		// console.log("nonCreditQuestions=", nonCreditQuestions);
+		//  for creditQuestions 
 		for (var i = 0; i < creditQuestions.length; i++) {
+			var total = 0,
+				statement = "";
 			item = creditQuestions[i].split(' ');
+			for (var j = 0; j < item.length; j++) {
+
+				if (hasOwnProperty(item[j], currencyArray)) {
+
+					if (j > 0) {
+						if (hasOwnProperty(item[j - 1], currencyArray) < hasOwnProperty(item[j], currencyArray)) {
+							total =
+								total > hasOwnProperty(item[j], currencyArray) ? total - hasOwnProperty(item[j], currencyArray) : hasOwnProperty(item[j], currencyArray) - total;
+						} else {
+							total = total + hasOwnProperty(item[j], currencyArray);
+						}
+					}
+					statement = statement.concat(" ", item[j]);
+				} else if (hasOwnProperty(item[j], elementValueArray)) {
+					total = total * hasOwnProperty(item[j], elementValueArray);
+					statement = statement.concat(" ", item[j]);
+				}
+
+			}
+			// item.push("is", total);
+			// console.log(" ");
+			// console.log("item=", item);
+			console.log(statement, "is " + total);
+		}
+		//  for non creditQuestions 
+		for (var i = 0; i < nonCreditQuestions.length; i++) {
+			var total = 0,
+				statement = "",
+				unidentifiedStamentflag = true;
+			item = nonCreditQuestions[i].split(' ');
 
 			for (var j = 0; j < item.length; j++) {
-				value = hasOwnProperty(item[j], keysAndValueArray) ? value + hasOwnProperty(item[j], keysAndValueArray) : value + 0;
-				// console.log("value=", value);
+				// console.log("item=", item);
+				if (hasOwnProperty(item[j], currencyArray)) {
+					unidentifiedStamentflag = false;
+					total = total + hasOwnProperty(item[j], currencyArray)
+					statement = statement.concat(" ", item[j]);
+				}
 			}
-			item.push("is", value);
-			console.log(" ");
-			console.log("item=", item);
+			if (unidentifiedStamentflag) {
+				// item.push("is", total);
+				console.log("I have no idea what you are talking about");
+			} else {
+				// item.push("is", total);
+				// console.log(" ");
+				console.log(statement, "is " + total);
+			}
+
 		}
-
-
+		// solutionArray.push(item);
 	}
 
 };
 
 function hasOwnProperty(item, valueArray) {
+	// console.log("item ", item, valueArray);
 	// console.log("item, valueArray = ", item, valueArray);
 	for (var i = 0; i < valueArray.length; i++) {
 		if (valueArray[i].name == item) {
 			// console.log(" valueArray[i].value=", valueArray[i].value);
-			return (parseInt(valueArray[i].value));
+			return (valueArray[i].value);
 		}
 	}
 }
