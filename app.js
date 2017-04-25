@@ -2,6 +2,12 @@ var fs = require("fs");
 var text = fs.readFileSync("./text.txt").toString('utf-8');
 var textByLine = text.split("\n");
 
+const creditRegex = /Credits/i,
+	questionRegex = /[?]/i,
+	isStr = /is/,
+	creditStr = /Credits/,
+	nanStr = /[0-9]/;
+
 const currency = [{
 		romanVal: "I",
 		actualVal: 1,
@@ -43,24 +49,35 @@ const currency = [{
 const guidetotheGalaxyProblem = function guidetotheGalaxyProblem(textByLine, currency) {
 
 	var inputText = textByLine,
-		currencyArray,
-		queryStatementsArray,
-		elementValueArray;
+		currencyArray = [],
+		queryStatementsArray = [],
+		elementValueArray = [],
+		questionSatement = [],
+		solvedQuestionValues = [];
+
+	for (var i = 0; i < textByLine.length; i++) {
+		if (questionRegex.test(textByLine[i])) {
+			questionSatement.push(textByLine[i]);
+		}
+	}
 
 	currencyArray = _findGalaxyCurrencyNameFromFile(currency, inputText);
-	console.log("currencyArray = ", currencyArray);
-	console.log(" ");
+	// console.log("currencyArray = ", currencyArray);
+	// console.log(" ");
 
 	queryStatementsArray = _replaceValuesInStatement(currency, inputText);
 	// console.log("queryStatementsArray = ", queryStatementsArray);
 	// console.log(" ");
 
 	elementValueArray = _evalValuesInQueryStatements(queryStatementsArray);
+	// console.log("elementValueArray = ", elementValueArray);
+	// console.log(" ");
 
-	console.log("elementValueArray = ", elementValueArray);
+	keysAndValueArray = _concatcurrencyAndElement(elementValueArray, currencyArray);
+	console.log("keysAndValueArray = ", keysAndValueArray);
 	console.log(" ");
 
-	// elementValueArray = _evalValuesInQueryStatements(elementValueArray, );
+	solvedQuestionValues = _evalValuesInQuestionStatements(questionSatement, currencyArray, elementValueArray);
 
 	function _findGalaxyCurrencyNameFromFile(currencyArrg, inputText) {
 		var curr = currency,
@@ -95,12 +112,10 @@ const guidetotheGalaxyProblem = function guidetotheGalaxyProblem(textByLine, cur
 			inputTextLen = inputText.length,
 			currencyArrLen = currencyArrg.length,
 			subStr,
-			creditRegex = /Credits/i,
-			howManyRegex = /how many/i,
 			arrgCurrency = currencyArrg;
 
 		for (var i = 0; i < inputTextLen; i++) {
-			if ((!(howManyRegex.test(inputText[i]))) && (creditRegex.test(inputText[i]))) {
+			if ((!(questionRegex.test(inputText[i]))) && (creditRegex.test(inputText[i]))) {
 
 				for (var j = 0; j < currencyArrLen; j++) {
 					if (arrgCurrency[j].galaxyCurrencyVal !== "") {
@@ -120,27 +135,37 @@ const guidetotheGalaxyProblem = function guidetotheGalaxyProblem(textByLine, cur
 	function _evalValuesInQueryStatements(array) {
 		var arrayLen = array.length,
 			item = [],
-			valueAdd = 0,
-			valueSub = 0,
 			total = 0,
-			flag = false,
 			coinElement = [],
 			newArray = [];
 		for (var i = 0; i < arrayLen; i++) {
+			var diviser = 0,
+				divident = 0,
+				flag = false;
 			item = array[i].split(' ');
 			const len = item.length;
 			for (var j = 0; j < len; j++) {
-				const isStr = /is/,
-					creditStr = /Credits/,
-					nanStr = /[0-9]/;
+
 				if ((isStr.test(item[j]))) {
 					flag = true;
 				}
 				if ((nanStr.test(item[j]))) {
 					if (flag) {
-						valueSub = valueSub + parseInt(item[j]);
+						divident = parseInt(item[j]);
 					} else {
-						valueAdd = valueAdd + parseInt(item[j]);
+						if (j > 0) {
+							if (parseInt(item[j - 1]) < parseInt(item[j])) {
+								diviser =
+									diviser > parseInt(item[j]) ? diviser - parseInt(item[j]) : parseInt(item[j]) - diviser;
+								// diviser = diviser - parseInt(item[j]);
+							} else if (parseInt(item[j - 1]) == parseInt(item[j])) {
+								diviser = diviser + parseInt(item[j]);
+							} else if (parseInt(item[j - 1]) > parseInt(item[j])) {
+								diviser = diviser + parseInt(item[j]);
+							}
+						} else {
+							diviser = diviser + parseInt(item[j]);
+						}
 					}
 				}
 				if (((!isStr.test(item[j])) && (!creditStr.test(item[j])))) {
@@ -152,16 +177,66 @@ const guidetotheGalaxyProblem = function guidetotheGalaxyProblem(textByLine, cur
 					}
 				}
 			}
-			total = valueSub > valueAdd ? valueSub - valueAdd : valueAdd - valueSub;
+			total = divident / diviser;
 			coinElement[i].value = total;
-			// coinElement.push({
-			// 	value: total
-			// });
 		}
-
 		return coinElement;
 	}
 
+	function _concatcurrencyAndElement(elementValueArray, currencyArray) {
+		var keyObj = [],
+			length = currencyArray.length;
+		for (var i = 0; i < length; i++) {
+			keyObj.push({
+				name: currencyArray[i].galaxyCurrencyVal,
+				value: currencyArray[i].actualVal
+			})
+		}
+		keyObj = keyObj.concat(elementValueArray)
+		return keyObj;
+	}
+
+	function _evalValuesInQuestionStatements(questionSatement, currencyArray, elementValueArray) {
+		var queObjLen = questionSatement.length,
+			value = 0,
+			item = [],
+			creditQuestions = [],
+			nonCreditQuestions = [];
+		for (var i = 0; i < queObjLen; i++) {
+			if (creditRegex.test(questionSatement[i])) {
+				creditQuestions.push(questionSatement[i])
+			} else {
+				nonCreditQuestions.push(questionSatement[i]);
+			}
+		}
+		console.log("creditQuestions=", creditQuestions);
+		console.log("nonCreditQuestions=", nonCreditQuestions);
+
+		for (var i = 0; i < creditQuestions.length; i++) {
+			item = creditQuestions[i].split(' ');
+
+			for (var j = 0; j < item.length; j++) {
+				value = hasOwnProperty(item[j], keysAndValueArray) ? value + hasOwnProperty(item[j], keysAndValueArray) : value + 0;
+				// console.log("value=", value);
+			}
+			item.push("is", value);
+			console.log(" ");
+			console.log("item=", item);
+		}
+
+
+	}
+
 };
+
+function hasOwnProperty(item, valueArray) {
+	// console.log("item, valueArray = ", item, valueArray);
+	for (var i = 0; i < valueArray.length; i++) {
+		if (valueArray[i].name == item) {
+			// console.log(" valueArray[i].value=", valueArray[i].value);
+			return (parseInt(valueArray[i].value));
+		}
+	}
+}
 
 guidetotheGalaxyProblem(textByLine, currency);
